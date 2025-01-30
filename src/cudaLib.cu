@@ -13,6 +13,9 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort)
 __global__ 
 void saxpy_gpu (float* x, float* y, float scale, int size) {
 	//	Insert GPU SAXPY kernel code here
+	int idx = (threadIdx.x + blockDim.x * blockIdx.x);
+
+	if(idx < size) y[idx] = scale * x[idx] + y[idx];
 }
 
 int runGpuSaxpy(int vectorSize) {
@@ -20,8 +23,44 @@ int runGpuSaxpy(int vectorSize) {
 	std::cout << "Hello GPU Saxpy!\n";
 
 	//	Insert code here
-	std::cout << "Lazy, you are!\n";
-	std::cout << "Write code, you must\n";
+	// std::cout << "Lazy, you are!\n";
+	// std::cout << "Write code, you must\n";
+
+	srand(time(NULL));
+
+	size_t bytes = vectorSize * sizeof(float);
+
+	float* hx = new float[vectorSize];
+	float* hy = new float[vectorSize];
+
+	float scale = static_cast<float>(rand()) / RAND_MAX;
+
+	for(int i = 0; i < vectorSize; i++) {
+		hx[i] = static_cast<float>(rand()) / RAND_MAX;
+		hy[i] = static_cast<float>(rand()) / RAND_MAX;
+	}
+
+	
+	float* dx;
+	float* dy;
+
+	cudaMalloc((void**)&dx, bytes);
+	cudaMalloc((void**)&dy, bytes);
+
+	cudaMemcpy(dx, hx, bytes, cudaMemcpyHostToDevice);
+	cudaMemcpy(dx, hx, bytes, cudaMemcpyHostToDevice);
+
+	//saxpy_gpu<<<(vectorSize + 255) / 256, 256>>>(dx, dy, scale, vectorSize);
+	saxpy_gpu<<< ceil(vectorSize / 256), 256>>>(dx, dy, scale, vectorSize);
+
+	cudaMemcpy(hy, dy, bytes, cudaMemcpyDeviceToHost);
+
+	cudaFree(dx);
+	cudaFree(dy);
+	delete[] hx;
+	delete[] hy;
+
+
 
 	return 0;
 }
