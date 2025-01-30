@@ -33,11 +33,16 @@ int runGpuSaxpy(int vectorSize) {
 	float* hx = new float[vectorSize];
 	float* hy = new float[vectorSize];
 
+	//For CPU verif?
+	float* hy2 = new float[vectorSize];
+
 	float scale = static_cast<float>(rand()) / RAND_MAX;
 
 	for(int i = 0; i < vectorSize; i++) {
 		hx[i] = static_cast<float>(rand()) / RAND_MAX;
 		hy[i] = static_cast<float>(rand()) / RAND_MAX;
+		hy2[i] = hy[i];
+
 	}
 
 	
@@ -48,21 +53,38 @@ int runGpuSaxpy(int vectorSize) {
 	cudaMalloc((void**)&dy, bytes);
 
 	cudaMemcpy(dx, hx, bytes, cudaMemcpyHostToDevice);
-	cudaMemcpy(dx, hx, bytes, cudaMemcpyHostToDevice);
+	cudaMemcpy(dy, hy, bytes, cudaMemcpyHostToDevice);
 
 	//saxpy_gpu<<<(vectorSize + 255) / 256, 256>>>(dx, dy, scale, vectorSize);
-	saxpy_gpu<<< ceil(vectorSize / 256), 256>>>(dx, dy, scale, vectorSize);
+	saxpy_gpu<<< ceil(vectorSize+255 / 256), 256>>>(dx, dy, scale, vectorSize);
 
 	cudaMemcpy(hy, dy, bytes, cudaMemcpyDeviceToHost);
+
+
+	//Do CPU Verification
+	int out = 1;
+	saxpy_cpu(hx, hy2, scale, vectorSize);
+	for(int i = 0; i < vectorSize; i++) {
+		float val = abs(hy[i] - hy2[i]);
+		if(val > .01) {
+			out = 0;
+			std::cout << "Error at idx: " << i << ", Diff val is: " << val << "\n";
+			break;
+		}
+
+	}
+
 
 	cudaFree(dx);
 	cudaFree(dy);
 	delete[] hx;
 	delete[] hy;
+	delete[] hy2;
+
+	std::cout << "GPU Saxpy DONE!\n";
 
 
-
-	return 0;
+	return out;
 }
 
 /* 
