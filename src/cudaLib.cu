@@ -125,7 +125,6 @@ void generatePoints (uint64_t * pSums, uint64_t pSumSize, uint64_t sampleSize) {
 
 __global__ 
 void reduceCounts (uint64_t * pSums, uint64_t * totals, uint64_t pSumSize, uint64_t reduceSize) {
-	//	Insert code here
 
 	int idx = (threadIdx.x + blockDim.x * blockIdx.x);
 	if(idx >= reduceSize) return;
@@ -185,8 +184,10 @@ double estimatePi(uint64_t generateThreadCount, uint64_t sampleSize,
 	cudaMalloc((void**)&dSum, generateThreadCount * sizeof(uint64_t));
 	cudaMalloc((void**)&dTotal, generateThreadCount * sizeof(uint64_t));
 
-	generatePoints<<< ceil(generateThreadCount+255 / 256), 256>>>(dSum, generateThreadCount, sampleSize);
-	reduceCounts<<< ceil(generateThreadCount+255 / 256), 256>>>(dSum, dTotal, generateThreadCount, reduceThreadCount);
+	generatePoints<<< (generateThreadCount+255 / 256), 256>>>(dSum, generateThreadCount, sampleSize);
+
+	//kind of my pass through function
+	reduceCounts<<< (generateThreadCount+255 / 256), 256>>>(dSum, dTotal, generateThreadCount, reduceThreadCount);
 
 	cudaMemcpy(hTotal, dTotal, reduceThreadCount*sizeof(uint64_t), cudaMemcpyDeviceToHost);
 

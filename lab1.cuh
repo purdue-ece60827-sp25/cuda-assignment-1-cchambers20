@@ -17,8 +17,9 @@
 	// #define DEBUG_PRINT_DISABLE
 	
 	#define VECTOR_SIZE (1 << 15)
+	//#define VECTOR_SIZE ((1 << 29) - 1)
 
-	#define MC_SAMPLE_SIZE		1e6
+	#define MC_SAMPLE_SIZE		1e9
 	#define MC_ITER_COUNT		32
 
 	#define WARP_SIZE			32
